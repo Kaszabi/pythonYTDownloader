@@ -1,16 +1,20 @@
 import os, time
-import tkinter
-from tkinter import ttk
-from tkinter import filedialog
-from tkinter import *
+# import tkinter
+# from tkinter import ttk
+# from tkinter import filedialog
+# from tkinter import *
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from pytube import YouTube 
 from threading import Thread
 
+import ssl
+
+ssl._create_default_https_context = ssl._create_unverified_context
+
 # Dev Variables (Disable for build)
-testPlaylist = "https://www.youtube.com/playlist?list=PLdwW9JQC5x5B_QBMTui09isICgbgOJjTX"
+testPlaylist = "https://www.youtube.com/playlist?list=PLeKFAv7V8KjyhrQU7tmFLOTt6t53-qJdL"
 testDestinasion = 'test'
 testDriver = 'firefox'
 
@@ -77,18 +81,19 @@ def dlPlaylist(link: str, *args, **kwargs):
     driver.implicitly_wait(0.5)
     driver.maximize_window()
     try:
-        driver.find_element(By.XPATH, '//button[@class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-k8QpJ VfPpkd-LgbsSe-OWXEXe-dgl2Hf nCP5yc AjY5Oe DuMIQc iMLaPd"]').click()
+        driver.find_element(By.XPATH, '//button[@class="VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-k8QpJ VfPpkd-LgbsSe-OWXEXe-dgl2Hf nCP5yc AjY5Oe DuMIQc Gu558e"]').click()
     except:
         print('Cookie accept btn not found')
 
     totalVideos = driver.find_elements(By.XPATH, '//span[@class="style-scope yt-formatted-string"]')
+    goodVideos = totalVideos.__len__()
     # print(f'TotalVideos: {totalVideos}')
-    for v in totalVideos:
-        try:
-            goodVideos = int(v.text)
-            break
-        except:
-            pass
+    # for v in totalVideos:
+    #     try:
+    #         goodVideos = int(v.text)
+    #         break
+    #     except:
+    #         pass
     
     print(f"total vids: {goodVideos}")
 
@@ -125,22 +130,29 @@ def dlPlaylist(link: str, *args, **kwargs):
 
     for l in link:
 
-        print(f'{counter}/{goodVideos}')
+        print(f'{counter}/{goodVideos}: {l}')
         yt = YouTube(str(l))
         # check if mp3 file exists
         # print('Getting title')
-        title = yt.title.replace('/', '').replace('\\', '').replace(':', '').replace('*', '').replace('?', '').replace('"', '').replace('<', '').replace('>', '').replace('|', '').replace('\'', '').replace('.', '')
-        if os.path.isfile(f'{destination}\\{title}.mp3'):
-            print(f'{destination}\\{title}.mp3 exists')
-            pass
-        else:
-            video = yt.streams.filter(only_audio=True).first()
-            out_file = video.download(output_path=destination, filename=title)
-            base, ext = os.path.splitext(out_file) 
-            new_file = base + '.mp3'
-            os.rename(out_file, new_file) 
-            print(new_file)
+        try:
+            title = yt.title.replace('/', '').replace('\\', '').replace(':', '').replace('*', '').replace('?', '').replace('"', '').replace('<', '').replace('>', '').replace('|', '').replace('\'', '').replace('.', '')
+        except:
+            title = f'Errored Title: {l}'
+        if os.path.isfile(f'{destination}/{title}.mp3'):
+            print(f'{destination}/{title}.mp3 exists')
             counter += 1
+        else:
+            try:
+                video = yt.streams.filter(only_audio=True).first()
+                out_file = video.download(output_path=destination, filename=title)
+                base, ext = os.path.splitext(out_file) 
+                new_file = base + '.mp3'
+                os.rename(out_file, new_file) 
+                print(new_file)
+                counter += 1
+            except:
+                print(f'Errored Title: {title}')
+                counter += 1
 
         if not test:
             counter += 1
